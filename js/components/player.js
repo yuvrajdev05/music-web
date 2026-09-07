@@ -1,56 +1,67 @@
 // js/components/player.js
-
-let ytPlayer;
-let isPlayerReady = false;
+// Uses native HTML5 Audio for true background playback (no YouTube iframe)
 
 const Player = {
     currentSong: null,
     isPlaying: false,
+    audio: null,
     updateInterval: null,
 
     init() {
-        // Expose globally for YT API
-        window.onYouTubeIframeAPIReady = () => {
-            ytPlayer = new YT.Player('yt-player', {
-                height: '100',
-                width: '100',
-                videoId: '',
-                playerVars: {
-                    'playsinline': 1,
-                    'controls': 0,
-                    'disablekb': 1,
-                    'fs': 0,
-                    'modestbranding': 1
-                },
-                events: {
-                    'onReady': () => { isPlayerReady = true; },
-                    'onStateChange': this.onPlayerStateChange.bind(this)
-                }
-            });
-        };
-        
+        // Create a single native HTML5 audio element
+        this.audio = new Audio();
+        this.audio.preload = 'auto';
+
+        // Wire up audio element events
+        this.audio.addEventListener('play', () => {
+            this.isPlaying = true;
+            this.startProgressTracking();
+            this.updateUI();
+        });
+
+        this.audio.addEventListener('pause', () => {
+            this.isPlaying = false;
+            this.stopProgressTracking();
+            this.updateUI();
+        });
+
+        this.audio.addEventListener('ended', () => {
+            this.isPlaying = false;
+            this.stopProgressTracking();
+            this.playNext();
+        });
+
+        this.audio.addEventListener('error', (e) => {
+            console.error('Audio error:', e);
+            document.getElementById('bp-title').textContent = 'Error loading song. Trying next...';
+            setTimeout(() => this.playNext(), 2000);
+        });
+
         this.bindEvents();
     },
 
     bindEvents() {
-        const playBtn = document.getElementById('bp-play-btn');
-        const prevBtn = document.getElementById('bp-prev-btn');
-        const nextBtn = document.getElementById('bp-next-btn');
-        const volSlider = document.getElementById('bp-volume');
-        const progressBar = document.getElementById('bp-progress');
-        
-        playBtn.addEventListener('click', () => this.togglePlay());
-        
-        volSlider.addEventListener('input', (e) => {
-            if (isPlayerReady) ytPlayer.setVolume(e.target.value);
-            document.getElementById('np-volume').value = e.target.value; // Sync with now playing
+        document.getElementById('bp-play-btn').addEventListener('click', () => this.togglePlay());
+
+        document.getElementById('bp-volume').addEventListener('input', (e) => {
+            this.audio.volume = e.target.value / 100;
+            const npVol = document.getElementById('np-volume');
+            if (npVol) npVol.value = e.target.value;
         });
-        
-        progressBar.addEventListener('input', (e) => {
-            if (isPlayerReady && ytPlayer.getDuration) {
-                const duration = ytPlayer.getDuration();
-                const seekTo = (e.target.value / 100) * duration;
-                ytPlayer.seekTo(seekTo, true);
+
+        document.getElementById('bp-progress').addEventListener('input', (e) => {
+            if (this.audio.duration) {
+                this.audio.currentTime = (e.target.value / 100) * this.audio.duration;
+            }
+        });
+
+        document.getElementById('bp-next-btn').addEventListener('click', () => this.playNext());
+        document.getElementById('bp-prev-btn').addEventListener('click', () => {
+            // Restart song if past 3s, else just restart
+            if (this.audio.currentTime > 3) {
+                this.audio.currentTime = 0;
+            } else {
+                this.playNext();
             }
         });
 
@@ -65,89 +76,71 @@ const Player = {
     playSong(song) {
         if (!song || !song.id) return;
         this.currentSong = song;
-        
-        if (isPlayerReady) {
-            ytPlayer.loadVideoById(song.id);
-            this.isPlaying = true;
-            this.updateUI();
-            
-            // Add to recently played
-            window.Store.addRecent(song);
-            
-            // --- Background Playback (Media Session API) ---
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.metadata = new MediaMetadata({
-                    title: song.title,
-                    artist: song.artist,
-                    album: 'YUVI MUSIC',
-                    artwork: [
-                        { src: song.thumbnail, sizes: '96x96',   type: 'image/jpeg' },
-                        { src: song.thumbnail, sizes: '512x512', type: 'image/jpeg' }
-                    ]
-                });
-                
-                navigator.mediaSession.setActionHandler('play', () => this.togglePlay());
-                navigator.mediaSession.setActionHandler('pause', () => this.togglePlay());
-                navigator.mediaSession.setActionHandler('previoustrack', () => { /* Prevent default */ });
-                navigator.mediaSession.setActionHandler('nexttrack', () => this.playNext());
-            }
-        } else {
-            console.warn("YouTube API not ready yet");
+
+        // Point directly to our backend streaming endpoint
+        this.audio.src = `/api/stream?id=${song.id}`;
+        this.audio.load();
+        this.audio.play().catch(err => {
+            console.error('Playback failed:', err);
+        });
+
+        // Add to recently played
+        window.Store.addRecent(song);
+
+        // Update all UI
+        this.updateUI();
+
+        // --- Background Playback: Register with OS via Media Session API ---
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: song.title,
+                artist: song.artist,
+                album: 'YUVI MUSIC',
+                artwork: [
+                    { src: song.thumbnail, sizes: '96x96',   type: 'image/jpeg' },
+                    { src: song.thumbnail, sizes: '256x256', type: 'image/jpeg' },
+                    { src: song.thumbnail, sizes: '512x512', type: 'image/jpeg' }
+                ]
+            });
+
+            navigator.mediaSession.setActionHandler('play',          () => this.togglePlay());
+            navigator.mediaSession.setActionHandler('pause',         () => this.togglePlay());
+            navigator.mediaSession.setActionHandler('nexttrack',     () => this.playNext());
+            navigator.mediaSession.setActionHandler('previoustrack', () => { this.audio.currentTime = 0; });
+            navigator.mediaSession.setActionHandler('seekto', (details) => {
+                if (details.seekTime && this.audio.duration) {
+                    this.audio.currentTime = details.seekTime;
+                }
+            });
         }
     },
 
     togglePlay() {
-        if (!this.currentSong || !isPlayerReady) return;
-        
-        const state = ytPlayer.getPlayerState();
-        if (state === YT.PlayerState.PLAYING) {
-            ytPlayer.pauseVideo();
-            this.isPlaying = false;
+        if (!this.currentSong) return;
+        if (this.audio.paused) {
+            this.audio.play().catch(e => console.error(e));
         } else {
-            ytPlayer.playVideo();
-            this.isPlaying = true;
+            this.audio.pause();
         }
-        this.updateUI();
-    },
-
-    onPlayerStateChange(event) {
-        if (event.data === YT.PlayerState.PLAYING) {
-            this.isPlaying = true;
-            this.startProgressTracking();
-        } else {
-            this.isPlaying = false;
-            this.stopProgressTracking();
-        }
-        
-        if (event.data === YT.PlayerState.ENDED) {
-            this.isPlaying = false;
-            this.playNext(); // Autoplay next song
-        }
-        
-        this.updateUI();
     },
 
     async playNext() {
         if (!this.currentSong) return;
-        
-        // 1. Try to play from queue
+
+        // 1. Try queue first
         const nextInQueue = window.Store.dequeue();
         if (nextInQueue) {
             this.playSong(nextInQueue);
             return;
         }
 
-        // 2. Infinite Autoplay: Fetch related song
+        // 2. Infinite Autoplay: fetch a related song
         try {
-            // Give UI feedback
             document.getElementById('bp-title').textContent = 'Loading next song...';
-            
             const related = await window.YuviAPI.getRelated(this.currentSong.artist);
             if (related && related.length > 0) {
-                // Try to find a song that isn't the exact same one
                 let nextSong = related.find(s => s.id !== this.currentSong.id);
                 if (!nextSong) nextSong = related[0];
-                
                 this.playSong(nextSong);
             }
         } catch (e) {
@@ -158,48 +151,57 @@ const Player = {
     startProgressTracking() {
         if (this.updateInterval) clearInterval(this.updateInterval);
         this.updateInterval = setInterval(() => {
-            if (isPlayerReady && ytPlayer.getCurrentTime) {
-                const current = ytPlayer.getCurrentTime();
-                const duration = ytPlayer.getDuration();
-                const percentage = (current / duration) * 100;
-                
-                // Update Bottom Player
-                document.getElementById('bp-progress').value = percentage || 0;
-                document.getElementById('bp-time-current').textContent = this.formatTime(current);
-                document.getElementById('bp-time-total').textContent = this.formatTime(duration);
-                
-                // Update Now Playing
-                document.getElementById('np-progress').value = percentage || 0;
-                document.getElementById('np-time-current').textContent = this.formatTime(current);
-                document.getElementById('np-time-total').textContent = this.formatTime(duration);
+            const current = this.audio.currentTime;
+            const duration = this.audio.duration || 0;
+            const percentage = duration ? (current / duration) * 100 : 0;
+
+            // Update Bottom Player
+            document.getElementById('bp-progress').value = percentage;
+            document.getElementById('bp-time-current').textContent = this.formatTime(current);
+            document.getElementById('bp-time-total').textContent = this.formatTime(duration);
+
+            // Update Now Playing overlay
+            const npProgress = document.getElementById('np-progress');
+            const npCurrent = document.getElementById('np-time-current');
+            const npTotal = document.getElementById('np-time-total');
+            if (npProgress) npProgress.value = percentage;
+            if (npCurrent) npCurrent.textContent = this.formatTime(current);
+            if (npTotal) npTotal.textContent = this.formatTime(duration);
+
+            // Update Media Session position state
+            if ('mediaSession' in navigator && navigator.mediaSession.setPositionState && duration) {
+                navigator.mediaSession.setPositionState({
+                    duration,
+                    playbackRate: this.audio.playbackRate,
+                    position: current
+                });
             }
-        }, 1000);
+        }, 500);
     },
 
     stopProgressTracking() {
         if (this.updateInterval) {
             clearInterval(this.updateInterval);
+            this.updateInterval = null;
         }
     },
 
     updateUI() {
         if (!this.currentSong) return;
-        
-        // Update Bottom Player UI
+
         document.getElementById('bp-artwork').src = this.currentSong.thumbnail;
         document.getElementById('bp-artwork').style.display = 'block';
         document.getElementById('bp-title').textContent = this.currentSong.title;
         document.getElementById('bp-artist').textContent = this.currentSong.artist;
         document.getElementById('bp-play-icon').textContent = this.isPlaying ? 'pause' : 'play_arrow';
-        
-        // Sync with Now Playing if it exists
+
         if (window.NowPlaying) {
             window.NowPlaying.sync(this.currentSong, this.isPlaying);
         }
     },
 
     formatTime(seconds) {
-        if (!seconds) return '0:00';
+        if (!seconds || isNaN(seconds)) return '0:00';
         const m = Math.floor(seconds / 60);
         const s = Math.floor(seconds % 60);
         return `${m}:${s.toString().padStart(2, '0')}`;

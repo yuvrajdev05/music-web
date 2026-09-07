@@ -18,16 +18,16 @@ const NowPlaying = {
         document.getElementById('np-play-btn').addEventListener('click', () => window.Player.togglePlay());
         
         document.getElementById('np-progress').addEventListener('input', (e) => {
-            // Trigger same behavior as bottom player
-            const bpProgress = document.getElementById('bp-progress');
-            bpProgress.value = e.target.value;
-            bpProgress.dispatchEvent(new Event('input'));
+            if (window.Player.audio && window.Player.audio.duration) {
+                window.Player.audio.currentTime = (e.target.value / 100) * window.Player.audio.duration;
+            }
         });
         
         document.getElementById('np-volume').addEventListener('input', (e) => {
-            const bpVolume = document.getElementById('bp-volume');
-            bpVolume.value = e.target.value;
-            bpVolume.dispatchEvent(new Event('input'));
+            if (window.Player.audio) {
+                window.Player.audio.volume = e.target.value / 100;
+                document.getElementById('bp-volume').value = e.target.value;
+            }
         });
 
         // Lyrics toggle (placeholder)

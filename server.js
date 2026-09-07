@@ -47,7 +47,45 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // 2. Serve Static Files
+    // 2. Audio Streaming Proxy Endpoint
+    if (req.url.startsWith('/api/stream')) {
+        const urlObj = new URL(req.url, `http://localhost:${PORT}`);
+        const videoId = urlObj.searchParams.get('id');
+        
+        if (!videoId) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({ error: 'Missing video ID' }));
+        }
+
+        try {
+            const ytdl = require('ytdl-core');
+            const streamUrl = `https://www.youtube.com/watch?v=${videoId}`;
+            
+            // Allow range requests if needed, but for simple streaming:
+            res.writeHead(200, {
+                'Content-Type': 'audio/mpeg',
+                'Access-Control-Allow-Origin': '*'
+            });
+            
+            ytdl(streamUrl, { filter: 'audioonly', quality: 'highestaudio' })
+                .on('error', err => {
+                    console.error('YTDL Error:', err);
+                    if (!res.headersSent) {
+                        res.writeHead(500);
+                        res.end('Streaming error');
+                    }
+                })
+                .pipe(res);
+                
+        } catch (err) {
+            console.error('Stream setup error:', err);
+            res.writeHead(500);
+            res.end(JSON.stringify({ error: 'Failed to stream', details: err.message }));
+        }
+        return;
+    }
+
+    // 3. Serve Static Files
     let filePath = path.join(__dirname, req.url === '/' ? 'index.html' : req.url);
     
     // Normalize path to prevent directory traversal
