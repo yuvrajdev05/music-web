@@ -66,11 +66,11 @@ const YuviAPI = {
      * Searches the API via our local Node.js proxy to bypass CORS
      */
     /**
-     * Searches the API directly
+     * Searches the API via our Node.js proxy to bypass CORS
      */
     async search(query) {
         try {
-            const targetUrl = `${API_BASE}?title=${encodeURIComponent(query)}`;
+            const targetUrl = `/api/search?q=${encodeURIComponent(query)}`;
             const res = await fetch(targetUrl);
             if (!res.ok) {
                 let errorMsg = 'API Error';
