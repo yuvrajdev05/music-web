@@ -61,15 +61,39 @@ const server = http.createServer((req, res) => {
             const ytdl = require('@distube/ytdl-core');
             const streamUrl = `https://www.youtube.com/watch?v=${videoId}`;
             
-            const agent = ytdl.createAgent();
+            // Parse cookies from environment variable (set in Render dashboard)
+            // Format expected: "name1=value1; name2=value2; ..."
+            let agent;
+            if (process.env.YT_COOKIES) {
+                const cookieStr = process.env.YT_COOKIES;
+                const cookies = cookieStr.split(';').map(pair => {
+                    const [name, ...rest] = pair.trim().split('=');
+                    return { name: name.trim(), value: rest.join('=').trim() };
+                }).filter(c => c.name && c.value);
+                agent = ytdl.createAgent(cookies);
+                console.log(`[stream] Using ${cookies.length} cookies for video ${videoId}`);
+            } else {
+                agent = ytdl.createAgent();
+                console.warn('[stream] No YT_COOKIES env var set. May hit 429 rate limits.');
+            }
             
-            // Allow range requests if needed, but for simple streaming:
             res.writeHead(200, {
                 'Content-Type': 'audio/mpeg',
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': '*',
+                'Cache-Control': 'no-cache'
             });
             
-            ytdl(streamUrl, { filter: 'audioonly', quality: 'highestaudio', agent })
+            ytdl(streamUrl, {
+                filter: 'audioonly',
+                quality: 'highestaudio',
+                agent,
+                requestOptions: {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36',
+                        'Accept-Language': 'en-US,en;q=0.9',
+                    }
+                }
+            })
                 .on('error', err => {
                     console.error('YTDL Error:', err);
                     if (!res.headersSent) {
