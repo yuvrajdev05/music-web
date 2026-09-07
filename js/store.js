@@ -75,6 +75,25 @@ const Store = {
         this.save();
     },
 
+    // --- Recently Played ---
+    addRecent(song) {
+        // Remove if exists to push to front
+        this.data.recent = this.data.recent.filter(s => s.id !== song.id);
+        this.data.recent.unshift(song);
+        if (this.data.recent.length > 20) this.data.recent.pop();
+        this.save();
+    },
+
+    removeRecent(songId) {
+        this.data.recent = this.data.recent.filter(s => s.id !== songId);
+        this.save();
+    },
+
+    clearRecent() {
+        this.data.recent = [];
+        this.save();
+    },
+
     // --- Queue ---
     setQueue(songs) {
         this.data.queue = [...songs];

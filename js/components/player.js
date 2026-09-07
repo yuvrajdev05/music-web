@@ -72,7 +72,25 @@ const Player = {
             this.updateUI();
             
             // Add to recently played
-            window.Store.addToRecentlyPlayed(song);
+            window.Store.addRecent(song);
+            
+            // --- Background Playback (Media Session API) ---
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: song.title,
+                    artist: song.artist,
+                    album: 'YUVI MUSIC',
+                    artwork: [
+                        { src: song.thumbnail, sizes: '96x96',   type: 'image/jpeg' },
+                        { src: song.thumbnail, sizes: '512x512', type: 'image/jpeg' }
+                    ]
+                });
+                
+                navigator.mediaSession.setActionHandler('play', () => this.togglePlay());
+                navigator.mediaSession.setActionHandler('pause', () => this.togglePlay());
+                navigator.mediaSession.setActionHandler('previoustrack', () => { /* Prevent default */ });
+                navigator.mediaSession.setActionHandler('nexttrack', () => this.playNext());
+            }
         } else {
             console.warn("YouTube API not ready yet");
         }

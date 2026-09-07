@@ -4,10 +4,17 @@ const UI = {
     /**
      * Creates a standard song card (e.g. for Home/Browse grid)
      */
-    createSongCard(song) {
+    createSongCard(song, onRemove = null) {
         const card = document.createElement('div');
         card.className = 'song-card';
+        
+        let removeBtnHTML = '';
+        if (onRemove) {
+            removeBtnHTML = `<button class="remove-card-btn" title="Remove"><span class="material-symbols-rounded">close</span></button>`;
+        }
+
         card.innerHTML = `
+            ${removeBtnHTML}
             <div class="card-container">
                 <img src="${song.thumbnail}" alt="${song.title}" class="card-artwork">
                 <span class="yuvi-badge">Made by Yuvi</span>
@@ -15,9 +22,16 @@ const UI = {
             <h4 class="card-title">${song.title}</h4>
             <p class="card-artist">${song.artist}</p>
         `;
-        card.addEventListener('click', () => {
-            window.Player.playSong(song);
+        
+        card.addEventListener('click', (e) => {
+            if (onRemove && e.target.closest('.remove-card-btn')) {
+                e.stopPropagation();
+                onRemove(song);
+            } else {
+                window.Player.playSong(song);
+            }
         });
+        
         return card;
     },
 
