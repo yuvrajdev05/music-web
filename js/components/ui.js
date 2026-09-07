@@ -8,7 +8,10 @@ const UI = {
         const card = document.createElement('div');
         card.className = 'song-card';
         card.innerHTML = `
-            <img src="${song.thumbnail}" alt="${song.title}" class="card-artwork">
+            <div class="card-container">
+                <img src="${song.thumbnail}" alt="${song.title}" class="card-artwork">
+                <span class="yuvi-badge">Made by Yuvi</span>
+            </div>
             <h4 class="card-title">${song.title}</h4>
             <p class="card-artist">${song.artist}</p>
         `;
@@ -31,6 +34,7 @@ const UI = {
             ${index > -1 ? `<span style="color: var(--text-tertiary); width: 30px;">${index + 1}</span>` : ''}
             <div style="position: relative;">
                 <img src="${song.thumbnail}" alt="${song.title}" class="list-artwork">
+                <span class="yuvi-badge">Yuvi</span>
                 <div class="list-play-overlay">
                     <span class="material-symbols-rounded">play_arrow</span>
                 </div>

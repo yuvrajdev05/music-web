@@ -6,6 +6,13 @@ const NowPlaying = {
     init() {
         this.overlay = document.getElementById('now-playing-overlay');
         
+        // Open on mobile by clicking player left side
+        document.getElementById('player-trigger').addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                this.open();
+            }
+        });
+
         // Bind UI elements
         document.getElementById('close-overlay-btn').addEventListener('click', () => this.close());
         document.getElementById('np-play-btn').addEventListener('click', () => window.Player.togglePlay());
@@ -34,6 +41,53 @@ const NowPlaying = {
                 window.Store.toggleFavorite(window.Player.currentSong);
                 this.sync(window.Player.currentSong, window.Player.isPlaying);
             }
+        });
+
+        this.bindTouchGestures();
+    },
+
+    bindTouchGestures() {
+        let startY = 0;
+        let currentY = 0;
+        let isDragging = false;
+
+        this.overlay.addEventListener('touchstart', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.closest('button')) return;
+            startY = e.touches[0].clientY;
+            isDragging = true;
+            this.overlay.style.transition = 'none'; // Follow finger exactly
+        }, { passive: true });
+
+        this.overlay.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            currentY = e.touches[0].clientY;
+            const diff = currentY - startY;
+            if (diff > 0) { // Only allow swiping down
+                this.overlay.style.transform = `translateY(${diff}px)`;
+            }
+        }, { passive: true });
+
+        this.overlay.addEventListener('touchend', (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            // Restore smooth transitions
+            this.overlay.style.transition = 'top 0.4s cubic-bezier(0.25, 1, 0.5, 1), transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+            
+            const diff = currentY - startY;
+            if (diff > 120) {
+                // Swipe threshold met, close it
+                this.close();
+            } else {
+                // Snap back to top
+                this.overlay.style.transform = `translateY(0px)`;
+            }
+            
+            setTimeout(() => {
+                if (!this.overlay.classList.contains('visible')) {
+                    this.overlay.style.transform = '';
+                }
+            }, 400);
         });
     },
 

@@ -324,12 +324,43 @@ input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 }
 .list-item:hover { background-color: var(--bg-surface-hover); }
 .list-artwork { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; margin-right: 1rem; }
+.list-play-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 1rem; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: var(--transition);
+}
+.list-item:hover .list-play-overlay { opacity: 1; }
 .list-info { flex: 1; overflow: hidden; }
 .list-title { font-size: 1rem; font-weight: 500; margin-bottom: 0.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .list-artist { font-size: 0.85rem; color: var(--text-secondary); }
 .list-actions { display: flex; gap: 0.5rem; opacity: 0; transition: opacity 0.2s; }
 .list-item:hover .list-actions { opacity: 1; }
 .list-duration { font-size: 0.85rem; color: var(--text-tertiary); margin-left: 1rem; }
+
+/* Custom Branding Badge */
+.yuvi-badge {
+    position: absolute;
+    top: -5px;
+    right: 10px;
+    background-color: var(--accent);
+    color: #fff;
+    font-size: 0.55rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    pointer-events: none;
+    z-index: 10;
+}
+.card-container { position: relative; width: 100%; aspect-ratio: 1; }
+.card-container .yuvi-badge { top: 5px; right: 5px; font-size: 0.65rem; }
 
 /* Search Bar */
 .search-container {
