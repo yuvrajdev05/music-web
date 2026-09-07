@@ -58,8 +58,10 @@ const server = http.createServer((req, res) => {
         }
 
         try {
-            const ytdl = require('ytdl-core');
+            const ytdl = require('@distube/ytdl-core');
             const streamUrl = `https://www.youtube.com/watch?v=${videoId}`;
+            
+            const agent = ytdl.createAgent();
             
             // Allow range requests if needed, but for simple streaming:
             res.writeHead(200, {
@@ -67,7 +69,7 @@ const server = http.createServer((req, res) => {
                 'Access-Control-Allow-Origin': '*'
             });
             
-            ytdl(streamUrl, { filter: 'audioonly', quality: 'highestaudio' })
+            ytdl(streamUrl, { filter: 'audioonly', quality: 'highestaudio', agent })
                 .on('error', err => {
                     console.error('YTDL Error:', err);
                     if (!res.headersSent) {
