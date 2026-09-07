@@ -66,11 +66,16 @@ const YuviAPI = {
      * Searches the API via our local Node.js proxy to bypass CORS
      */
     /**
-     * Searches the API via our Node.js proxy to bypass CORS
+     * Searches the API via our Node.js proxy to bypass CORS with Caching
      */
     async search(query) {
         try {
             const targetUrl = `/api/search?q=${encodeURIComponent(query)}`;
+            
+            // Check cache to improve performance significantly
+            const cached = sessionStorage.getItem('yuvi_cache_' + targetUrl);
+            if (cached) return JSON.parse(cached);
+
             const res = await fetch(targetUrl);
             if (!res.ok) {
                 let errorMsg = 'API Error';
@@ -83,11 +88,26 @@ const YuviAPI = {
             const data = await res.json();
             
             const normalized = this.normalize(data);
-            return normalized ? [normalized] : [];
+            const result = normalized ? [normalized] : [];
+            
+            // Save to cache
+            if (result.length > 0) {
+                sessionStorage.setItem('yuvi_cache_' + targetUrl, JSON.stringify(result));
+            }
+            
+            return result;
         } catch (error) {
             console.error('Search failed:', error);
             return { error: error.message };
         }
+    },
+
+    /**
+     * Fetches related songs based on an artist name for Autoplay
+     */
+    async getRelated(artistName) {
+        // Use the cache-enabled search method
+        return await this.search(`${artistName} official audio`);
     },
 
     /**
@@ -103,4 +123,3 @@ const YuviAPI = {
 };
 
 window.YuviAPI = YuviAPI;
-

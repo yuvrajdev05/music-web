@@ -85,6 +85,13 @@ const Store = {
         this.data.queue.push(song);
         this.save();
     },
+    
+    dequeue() {
+        if (this.data.queue.length === 0) return null;
+        const nextSong = this.data.queue.shift();
+        this.save();
+        return nextSong;
+    },
 
     clearQueue() {
         this.data.queue = [];

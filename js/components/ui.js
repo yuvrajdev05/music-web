@@ -29,7 +29,12 @@ const UI = {
 
         item.innerHTML = `
             ${index > -1 ? `<span style="color: var(--text-tertiary); width: 30px;">${index + 1}</span>` : ''}
-            <img src="${song.thumbnail}" alt="${song.title}" class="list-artwork">
+            <div style="position: relative;">
+                <img src="${song.thumbnail}" alt="${song.title}" class="list-artwork">
+                <div class="list-play-overlay">
+                    <span class="material-symbols-rounded">play_arrow</span>
+                </div>
+            </div>
             <div class="list-info">
                 <h4 class="list-title">${song.title}</h4>
                 <p class="list-artist">${song.artist}</p>
@@ -37,6 +42,9 @@ const UI = {
             <div class="list-actions">
                 <button class="icon-btn fav-btn" data-id="${song.id}">
                     <span class="material-symbols-rounded" style="${window.Store.isFavorite(song.id) ? 'color: var(--accent)' : ''}">${favIcon}</span>
+                </button>
+                <button class="icon-btn reload-btn" title="Reload Song" data-id="${song.id}">
+                    <span class="material-symbols-rounded">refresh</span>
                 </button>
             </div>
             <span class="list-duration">${song.duration}</span>
@@ -49,6 +57,9 @@ const UI = {
                 const isFav = window.Store.isFavorite(song.id);
                 btn.textContent = isFav ? 'favorite' : 'favorite_border';
                 btn.style.color = isFav ? 'var(--accent)' : '';
+            } else if (e.target.closest('.reload-btn')) {
+                // Force reload the song
+                window.Player.playSong(song);
             } else {
                 window.Player.playSong(song);
             }

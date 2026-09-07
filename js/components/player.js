@@ -102,11 +102,39 @@ const Player = {
         }
         
         if (event.data === YT.PlayerState.ENDED) {
-            // Handle queue logic here later
             this.isPlaying = false;
+            this.playNext(); // Autoplay next song
         }
         
         this.updateUI();
+    },
+
+    async playNext() {
+        if (!this.currentSong) return;
+        
+        // 1. Try to play from queue
+        const nextInQueue = window.Store.dequeue();
+        if (nextInQueue) {
+            this.playSong(nextInQueue);
+            return;
+        }
+
+        // 2. Infinite Autoplay: Fetch related song
+        try {
+            // Give UI feedback
+            document.getElementById('bp-title').textContent = 'Loading next song...';
+            
+            const related = await window.YuviAPI.getRelated(this.currentSong.artist);
+            if (related && related.length > 0) {
+                // Try to find a song that isn't the exact same one
+                let nextSong = related.find(s => s.id !== this.currentSong.id);
+                if (!nextSong) nextSong = related[0];
+                
+                this.playSong(nextSong);
+            }
+        } catch (e) {
+            console.error('Autoplay failed', e);
+        }
     },
 
     startProgressTracking() {
