@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>YUVI MUSIC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet" />
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dark-mode">
+
+    <!-- Application Shell -->
+    <div id="app-container">
+        
+        <!-- Sidebar Navigation (Desktop) -->
+        <nav id="sidebar">
+            <div class="brand">
+                <span class="material-symbols-rounded brand-icon">music_note</span>
+                <h2>YUVI MUSIC</h2>
+            </div>
+            
+            <div class="nav-section">
+                <a href="#/" class="nav-item active" data-route="home">
+                    <span class="material-symbols-rounded">play_circle</span> Listen Now
+                </a>
+                <a href="#/browse" class="nav-item" data-route="browse">
+                    <span class="material-symbols-rounded">grid_view</span> Browse
+                </a>
+                <a href="#/search" class="nav-item" data-route="search">
+                    <span class="material-symbols-rounded">search</span> Search
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <h3>Library</h3>
+                <a href="#/library" class="nav-item" data-route="library">
+                    <span class="material-symbols-rounded">library_music</span> Library
+                </a>
+                <a href="#/favorites" class="nav-item" data-route="favorites">
+                    <span class="material-symbols-rounded">favorite</span> Favorites
+                </a>
+            </div>
+
+            <div class="nav-section playlists-section" id="sidebar-playlists">
+                <h3>Playlists</h3>
+                <!-- Dynamic Playlists -->
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+            <!-- Dynamic Views (Home, Search, etc.) injected here -->
+        </main>
+
+        <!-- Now Playing Full Screen Overlay -->
+        <div id="now-playing-overlay" class="hidden">
+            <div class="overlay-header">
+                <button id="close-overlay-btn" class="icon-btn">
+                    <span class="material-symbols-rounded">expand_more</span>
+                </button>
+            </div>
+            <div class="overlay-content">
+                <div class="artwork-container">
+                    <img id="np-artwork" src="" alt="Artwork">
+                </div>
+                <div class="song-details-large">
+                    <div class="text-group">
+                        <h2 id="np-title">Not Playing</h2>
+                        <h3 id="np-artist">YUVI MUSIC</h3>
+                    </div>
+                    <button class="icon-btn" id="np-fav-btn">
+                        <span class="material-symbols-rounded">favorite_border</span>
+                    </button>
+                </div>
+                <div class="playback-controls-large">
+                    <div class="progress-bar-container">
+                        <span id="np-time-current">0:00</span>
+                        <input type="range" id="np-progress" min="0" max="100" value="0">
+                        <span id="np-time-total">0:00</span>
+                    </div>
+                    <div class="main-controls">
+                        <button class="icon-btn" id="np-shuffle-btn">
+                            <span class="material-symbols-rounded">shuffle</span>
+                        </button>
+                        <button class="icon-btn" id="np-prev-btn">
+                            <span class="material-symbols-rounded">skip_previous</span>
+                        </button>
+                        <button class="icon-btn play-btn-large" id="np-play-btn">
+                            <span class="material-symbols-rounded" id="np-play-icon">play_arrow</span>
+                        </button>
+                        <button class="icon-btn" id="np-next-btn">
+                            <span class="material-symbols-rounded">skip_next</span>
+                        </button>
+                        <button class="icon-btn" id="np-repeat-btn">
+                            <span class="material-symbols-rounded">repeat</span>
+                        </button>
+                    </div>
+                    <div class="volume-controls">
+                        <span class="material-symbols-rounded">volume_down</span>
+                        <input type="range" id="np-volume" min="0" max="100" value="100">
+                        <span class="material-symbols-rounded">volume_up</span>
+                    </div>
+                </div>
+                <!-- Lyrics Placeholder -->
+                <div class="lyrics-section hidden" id="lyrics-section">
+                    <p>Lyrics unavailable</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Persistent Bottom Player -->
+        <div id="bottom-player">
+            <!-- Hidden YouTube IFrame -->
+            <div id="yt-player-container" style="position: absolute; width: 0; height: 0; overflow: hidden; opacity: 0;">
+                <div id="yt-player"></div>
+            </div>
+
+            <div class="player-left" id="player-trigger">
+                <img id="bp-artwork" src="" alt="" onerror="this.style.display='none'">
+                <div class="song-info">
+                    <h4 id="bp-title">Not Playing</h4>
+                    <p id="bp-artist">YUVI MUSIC</p>
+                </div>
+            </div>
+
+            <div class="player-center">
+                <div class="controls">
+                    <button class="icon-btn" id="bp-prev-btn"><span class="material-symbols-rounded">skip_previous</span></button>
+                    <button class="icon-btn play-btn" id="bp-play-btn"><span class="material-symbols-rounded" id="bp-play-icon">play_arrow</span></button>
+                    <button class="icon-btn" id="bp-next-btn"><span class="material-symbols-rounded">skip_next</span></button>
+                </div>
+                <div class="progress-bar-container-mini">
+                    <span id="bp-time-current">0:00</span>
+                    <input type="range" id="bp-progress" min="0" max="100" value="0">
+                    <span id="bp-time-total">-:--</span>
+                </div>
+            </div>
+
+            <div class="player-right">
+                <button class="icon-btn" id="bp-lyrics-btn"><span class="material-symbols-rounded">lyrics</span></button>
+                <button class="icon-btn" id="bp-queue-btn"><span class="material-symbols-rounded">queue_music</span></button>
+                <div class="volume-container">
+                    <span class="material-symbols-rounded">volume_up</span>
+                    <input type="range" id="bp-volume" min="0" max="100" value="100">
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Bottom Navigation -->
+        <nav id="mobile-nav">
+            <a href="#/" class="nav-item active" data-route="home">
+                <span class="material-symbols-rounded">play_circle</span>
+                <span>Listen Now</span>
+            </a>
+            <a href="#/search" class="nav-item" data-route="search">
+                <span class="material-symbols-rounded">search</span>
+                <span>Search</span>
+            </a>
+            <a href="#/library" class="nav-item" data-route="library">
+                <span class="material-symbols-rounded">library_music</span>
+                <span>Library</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="js/store.js" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/components/ui.js" defer></script>
+    <script src="js/components/player.js" defer></script>
+    <script src="js/components/now-playing.js" defer></script>
+    <script src="js/views/home.js" defer></script>
+    <script src="js/views/search.js" defer></script>
+    <script src="js/views/library.js" defer></script>
+    <script src="js/app.js" defer></script>
+</body>
+</html>
