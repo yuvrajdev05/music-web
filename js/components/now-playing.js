@@ -50,15 +50,18 @@ const NowPlaying = {
         let startY = 0;
         let currentY = 0;
         let isDragging = false;
+        
+        // Only bind touch gestures to the header so the main content can scroll natively
+        const header = this.overlay.querySelector('.overlay-header');
 
-        this.overlay.addEventListener('touchstart', (e) => {
+        header.addEventListener('touchstart', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.closest('button')) return;
             startY = e.touches[0].clientY;
             isDragging = true;
             this.overlay.style.transition = 'none'; // Follow finger exactly
         }, { passive: true });
 
-        this.overlay.addEventListener('touchmove', (e) => {
+        header.addEventListener('touchmove', (e) => {
             if (!isDragging) return;
             currentY = e.touches[0].clientY;
             const diff = currentY - startY;
@@ -67,7 +70,7 @@ const NowPlaying = {
             }
         }, { passive: true });
 
-        this.overlay.addEventListener('touchend', (e) => {
+        header.addEventListener('touchend', (e) => {
             if (!isDragging) return;
             isDragging = false;
             

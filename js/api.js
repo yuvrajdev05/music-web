@@ -103,11 +103,26 @@ const YuviAPI = {
     },
 
     /**
-     * Fetches related songs based on an artist name for Autoplay
+     * Gets related songs (using artist name as a fallback search)
      */
     async getRelated(artistName) {
-        // Use the cache-enabled search method
-        return await this.search(`${artistName} official audio`);
+        if (!artistName) return [];
+        const results = await this.search(`${artistName} songs`);
+        return results.filter(s => s.thumbnail); // filter valid
+    },
+
+    /**
+     * Gets top Arijit Singh hits
+     */
+    async getArijitSongs() {
+        return this.search('arijit singh top hits');
+    },
+
+    /**
+     * Gets Bollywood romance hits
+     */
+    async getBollywoodRomance() {
+        return this.search('bollywood romantic songs 2024');
     },
 
     /**

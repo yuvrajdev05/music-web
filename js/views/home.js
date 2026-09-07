@@ -53,40 +53,58 @@ const HomeView = {
         // --- Trending/Popular Sections ---
         this.container.innerHTML += `
             <section style="margin-bottom: 3rem;">
+                <h2>Arijit Singh Essentials</h2>
+                <div class="grid-container" id="home-arijit-grid"></div>
+            </section>
+
+            <section style="margin-bottom: 3rem;">
                 <h2>Trending Music</h2>
                 <div class="grid-container" id="home-trending-grid"></div>
             </section>
             
+            <section style="margin-bottom: 3rem;">
+                <h2>Bollywood Romance</h2>
+                <div class="grid-container" id="home-romance-grid"></div>
+            </section>
+
             <section style="margin-bottom: 3rem;">
                 <h2>Popular Songs</h2>
                 <div class="grid-container" id="home-popular-grid"></div>
             </section>
         `;
 
+        const arijitGrid = document.getElementById('home-arijit-grid');
         const trendingGrid = document.getElementById('home-trending-grid');
+        const romanceGrid = document.getElementById('home-romance-grid');
         const popularGrid = document.getElementById('home-popular-grid');
         
+        window.UI.showLoader(arijitGrid);
         window.UI.showLoader(trendingGrid);
+        window.UI.showLoader(romanceGrid);
         window.UI.showLoader(popularGrid);
 
-        // Fetch data
-        const trending = await window.YuviAPI.getTrending();
-        const popular = await window.YuviAPI.getPopular();
+        // Fetch data simultaneously for speed
+        const [arijit, trending, romance, popular] = await Promise.all([
+            window.YuviAPI.getArijitSongs(),
+            window.YuviAPI.getTrending(),
+            window.YuviAPI.getBollywoodRomance(),
+            window.YuviAPI.getPopular()
+        ]);
 
         // Render grids
-        trendingGrid.innerHTML = '';
-        if (trending.length > 0) {
-            trending.forEach(song => trendingGrid.appendChild(window.UI.createSongCard(song)));
-        } else {
-            window.UI.showEmpty(trendingGrid, 'Could not load trending music.');
-        }
+        const renderGrid = (gridEl, data, errorMsg) => {
+            gridEl.innerHTML = '';
+            if (data && data.length > 0) {
+                data.forEach(song => gridEl.appendChild(window.UI.createSongCard(song)));
+            } else {
+                window.UI.showEmpty(gridEl, errorMsg);
+            }
+        };
 
-        popularGrid.innerHTML = '';
-        if (popular.length > 0) {
-            popular.forEach(song => popularGrid.appendChild(window.UI.createSongCard(song)));
-        } else {
-            window.UI.showEmpty(popularGrid, 'Could not load popular music.');
-        }
+        renderGrid(arijitGrid, arijit, 'Could not load Arijit Singh hits.');
+        renderGrid(trendingGrid, trending, 'Could not load trending music.');
+        renderGrid(romanceGrid, romance, 'Could not load Bollywood hits.');
+        renderGrid(popularGrid, popular, 'Could not load popular music.');
     }
 };
 
